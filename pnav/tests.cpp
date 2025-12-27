@@ -7,5 +7,5 @@ using namespace std;
 int main() {
     Simulate sim;
     sim.pnav_2d();
-    
+    return 0;
 }

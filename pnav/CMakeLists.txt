@@ -4,5 +4,5 @@ add_library(pnav
 target_include_directories(pnav PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Test executable for pnav (proportional navigation) functions
-add_executable(test tests.cpp)
-target_link_libraries(test PRIVATE pnav)
+add_executable(pnav_test tests.cpp)
+target_link_libraries(pnav_test PRIVATE pnav)

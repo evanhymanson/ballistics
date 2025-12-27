@@ -5,44 +5,12 @@
 
 using namespace std;
 
-struct Target {
-    double x, y; // position
-    double vx, vy;
-    double v0;
-    double a;
-};
-
-struct Missile {
-    double x, y;
-    double vx, vy;
-    double ax, ay;
-    double v0;
-    double hd;
-};
-
-// relative missile to target: r = x_targ - x_missile
-struct Rel {
-    double x, y;
-    double vx, vy;
-    double r;
-    double v;
-};
-
-class Simulate {
-public: 
-    void pnav_2d() {
-        vector<double> time;
-        vector<double> m_x, m_y, t_x, t_y, rel_r, a_cmdvec;
+void Simulate::pnav_2d() {
         double h;
         double N = 4;
         double xlamd;
         double a_cmd;
         double betad;
-        
-        Target targ;
-        Missile missile;
-        Missile mold;
-        Target targold;
 
         missile.v0 = 3000;
         missile.hd = -20;
@@ -72,7 +40,14 @@ public:
         rel.r = sqrt(pow(rel.x, 2) + pow(rel.y, 2));
 
         double xlam = atan2(rel.y, rel.x);
-        double xlead = asin(targ.v0 * sin(beta + xlam)/missile.v0);
+        double asin_arg = targ.v0 * sin(beta + xlam)/missile.v0;
+        cout << "asin argument: " << asin_arg << endl;
+
+        // Clamp asin argument to valid range [-1, 1]
+        if (asin_arg > 1.0) asin_arg = 1.0;
+        if (asin_arg < -1.0) asin_arg = -1.0;
+
+        double xlead = asin(asin_arg);
         double theta = xlam + xlead;
 
         missile.vx = missile.v0 * cos(theta + missile.hd);
@@ -81,8 +56,19 @@ public:
         rel.vx = targ.vx - missile.vx;
         rel.vy = targ.vy - missile.vy;
 
-        double vc = -(rel.x*rel.vx + rel.y*rel.vy) / rel.r;
+        // Prevent division by zero when missile is very close to target
+        double vc;
+        if (rel.r < 0.1) {
+            vc = -1.0;  // Force loop to exit
+        } else {
+            vc = -(rel.x*rel.vx + rel.y*rel.vy) / rel.r;
+        }
+        cout << "  Initial vc: " << vc << endl;
+
+        // Initialize betad before the loop
+        betad = targ.a / targ.v0;
         double betaold;
+
         while (vc >= 0) {
             if (rel.r > 1000) {
                 h = .01;
@@ -93,7 +79,7 @@ public:
             betaold = beta;
             targold.x = targ.x;
             targold.y = targ.y;
-            
+
             mold.x = missile.x;
             mold.y = missile.y;
             mold.vx = missile.vx;
@@ -101,10 +87,10 @@ public:
 
             double step = 1;
             double flag = 0;
-            
+
             while (step >= 1) {
                 if (flag == 1) {
-                    step = 2;
+                    step = 0;
                     beta += h*betad;
                     targ.x += h*targ.vx;
                     targ.y += h*targ.vy;
@@ -120,7 +106,24 @@ public:
                 rel.r = sqrt(pow(rel.x, 2) + pow(rel.y, 2));
                 rel.vx = targ.vx - missile.vx;
                 rel.vy = targ.vy - missile.vy;
-                vc = -(rel.x*rel.vx + rel.y*rel.vy) / rel.r;
+
+                cout << "Loop iteration:" << endl;
+                cout << "  targ.x: " << targ.x << ", targ.y: " << targ.y << endl;
+                cout << "  missile.x: " << missile.x << ", missile.y: " << missile.y << endl;
+                cout << "  missile.vx: " << missile.vx << ", missile.vy: " << missile.vy << endl;
+                cout << "  missile.ax: " << missile.ax << ", missile.ay: " << missile.ay << endl;
+                cout << "  targ.vx: " << targ.vx << ", targ.vy: " << targ.vy << endl;
+                cout << "  rel.r: " << rel.r << endl;
+                cout << "  rel.vx: " << rel.vx << ", rel.vy: " << rel.vy << endl;
+
+                // Prevent division by zero when missile is very close to target
+                if (rel.r < 0.1) {
+                    vc = -1.0;  // Force loop to exit
+                } else {
+                    vc = -(rel.x*rel.vx + rel.y*rel.vy) / rel.r;
+                }
+
+                cout << "  VC: " << vc << endl;
                 xlam = atan2(rel.y, rel.x);
                 xlamd = (rel.x*rel.vy - rel.y*rel.vx)/(rel.r*rel.r);
                 a_cmd = N * vc * xlamd;
@@ -153,5 +156,4 @@ public:
                 rel_r.push_back(rel.r);
             }
         }
-    }
-};
+}

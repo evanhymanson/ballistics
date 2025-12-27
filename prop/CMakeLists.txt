@@ -6,5 +6,5 @@ add_library(prop
 target_include_directories(prop PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Test executable for prop functions
-add_executable(test tests.cpp)
-target_link_libraries(test PRIVATE prop)
+add_executable(prop_test tests.cpp)
+target_link_libraries(prop_test PRIVATE prop)
